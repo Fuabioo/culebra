@@ -1,4 +1,4 @@
-module culebra
+module github.com/Fuabioo/culebra
 
 go 1.24.4
 

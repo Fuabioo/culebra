@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"os"
 
-	"culebra/internal"
-	"github.com/yuin/gopher-lua"
+	"github.com/Fuabioo/culebra/internal"
+	lua "github.com/yuin/gopher-lua"
 )
 
 type Config struct {
