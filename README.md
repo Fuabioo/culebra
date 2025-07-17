@@ -1,4 +1,4 @@
-# 📦 Culebra
+# 🐍 Culebra
 
 Load **Lua scripts as configuration files** and optionally bind them into **Viper** and integrate with **Cobra** CLI apps.
 
