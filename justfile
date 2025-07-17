@@ -8,6 +8,7 @@ default:
 # Run the basic example
 example:
     cd examples/basic && go run main.go --config config.lua
+    cd examples/basic && go run main.go --config config-neovim-style.lua
 
 # Run tests
 test:

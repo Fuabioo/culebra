@@ -93,3 +93,48 @@ result = global_value * 2
 		t.Errorf("Expected result=42, got %v", result["result"])
 	}
 }
+
+func TestLoadWithReturnStatement(t *testing.T) {
+	tmpDir := t.TempDir()
+	configFile := filepath.Join(tmpDir, "test.lua")
+
+	configContent := `
+local config = {
+    app = {
+        name = "Returned App",
+        version = "2.0.0"
+    },
+    debug_mode = true,
+    port = 9090
+}
+
+return config
+`
+
+	if err := os.WriteFile(configFile, []byte(configContent), 0644); err != nil {
+		t.Fatalf("Failed to write test config: %v", err)
+	}
+
+	cfg := Config{FilePath: configFile}
+	result, err := Load(cfg)
+	if err != nil {
+		t.Fatalf("Load failed: %v", err)
+	}
+
+	if result["debug_mode"] != true {
+		t.Errorf("Expected debug_mode=true, got %v", result["debug_mode"])
+	}
+
+	if result["port"] != float64(9090) {
+		t.Errorf("Expected port=9090, got %v", result["port"])
+	}
+
+	app, ok := result["app"].(map[string]any)
+	if !ok {
+		t.Fatalf("Expected app to be a map, got %T", result["app"])
+	}
+
+	if app["name"] != "Returned App" {
+		t.Errorf("Expected app.name='Returned App', got %v", app["name"])
+	}
+}

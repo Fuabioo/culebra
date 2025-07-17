@@ -33,6 +33,19 @@ func Load(cfg Config) (map[string]any, error) {
 		return nil, fmt.Errorf("failed to execute lua config: %w", err)
 	}
 
+	// Check if the script returned a value (Neovim-style)
+	if L.GetTop() > 0 {
+		returnValue := L.Get(-1)
+		if table, ok := returnValue.(*lua.LTable); ok {
+			result := make(map[string]any)
+			table.ForEach(func(key, value lua.LValue) {
+				result[key.String()] = internal.LuaToGo(value)
+			})
+			return result, nil
+		}
+	}
+
+	// Fallback to global variables (traditional style)
 	result := make(map[string]any)
 	globalTable := L.Get(lua.GlobalsIndex).(*lua.LTable)
 	globalTable.ForEach(func(key, value lua.LValue) {
