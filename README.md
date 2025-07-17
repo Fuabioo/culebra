@@ -2,7 +2,8 @@
 
 Load **Lua scripts as configuration files** and optionally bind them into **Viper** and integrate with **Cobra** CLI apps.
 
-> IMPORTANT! The lua config will not replace existing cobra options like yml and json, it should work alongside them.
+> [!IMPORTANT]
+> The lua config will not replace existing cobra options like yml and json, it should work alongside them.
 
 ## 🏗️ Project Layout
 
