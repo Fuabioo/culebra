@@ -1,37 +1,16 @@
 # 📦 Culebra
 
-Load **Lua scripts as configuration files** and optionally bind them into **Viper** and integrate with **Cobra** CLI apps.
+Culebra, meaning 'snake' in Costa Rica, is a library for loading **Lua scripts as configuration files** and optionally bind them into **Viper** and integrate with **Cobra** CLI apps.
 
 > [!IMPORTANT]
 > The lua config will not replace existing cobra options like yml and json, it should work alongside them.
 
-## 🏗️ Project Layout
-
-```
-culebra/
-├── go.mod
-├── README.md
-├── luaconf.go # Core logic to load Lua configs
-├── viper.go # Bind Lua configs into Viper
-├── cobra.go # One-liner integration with Cobra
-├── lua/
-│ └── stdlib.lua # Optional Lua helpers
-├── examples/
-│ ├── basic/
-│ │ ├── main.go
-│ │ ├── config.lua # Traditional style
-│ │ └── config-neovim-style.lua # Neovim-style with return
-└── internal/
-└── mapper.go # Lua table → Go map
-```
-
 ## 🛠️ Features
 
-- Load `.lua` files as dynamic config sources.
-- Return as `map[string]any` or bind into Viper.
-- Seamlessly plug into Cobra with one-liner (`culebra.UseWithCobra()`).
-- Zero dependencies on Cobra/Viper — integration is optional.
-- **Supports both traditional and Neovim-style configurations**
+- Load Lua scripts as dynamic configuration sources with support for both traditional and Neovim-style configurations.
+- Return configurations as `map[string]any` or easily bind them into Viper.
+- Integrate with Cobra through a simple one-liner: `culebra.UseWithCobra()`.
+- Provide flexibility with zero dependencies on Cobra/Viper — their usage is optional.
 
 ## 📝 Configuration Styles
 
@@ -88,17 +67,17 @@ return config
 
 ## 🔍 API
 
-- ✅ `Load(cfg Config) (map[string]any, error)` — loads Lua config
-- ✅ `BindToViper(cfg Config, v *viper.Viper) error` — injects config into Viper
-- ✅ `UseWithCobra(cmd *cobra.Command)` — adds `--config` flag, loads Lua into Viper
-- ✅ Basic error wrapping/logging
-- ✅ Example CLI app using `cobra` and `viper` + Lua config
+- ✅ `Load(cfg Config) (map[string]any, error)` — Loads Lua configuration.
+- ✅ `BindToViper(cfg Config, v *viper.Viper) error` — Injects configuration into Viper.
+- ✅ `UseWithCobra(cmd *cobra.Command)` — Adds a `--config` flag that loads Lua into Viper.
+- ✅ Includes basic error handling and logging.
+- ✅ Comes with an example CLI app utilizing `cobra` and `viper` alongside Lua configurations.
 
 ## 📦 Dependencies
 
-- `github.com/yuin/gopher-lua` — Lua VM in Go
-- `github.com/spf13/viper` (optional)
-- `github.com/spf13/cobra` (optional)
+- `github.com/yuin/gopher-lua` — Lua VM in Go.
+- `github.com/spf13/viper` (optional).
+- `github.com/spf13/cobra` (optional).
 
 ## 🧪 Usage
 
@@ -106,11 +85,38 @@ return config
 // Basic usage
 cfg := culebra.Config{FilePath: "config.lua"}
 data, err := culebra.Load(cfg)
+```
 
+```go
 // With Viper
 err = culebra.BindToViper(cfg, viper.GetViper())
+```
 
-// With Cobra (one-liner)
+```go
+// With Cobra
+rootCmd := &cobra.Command{
+    Use: "myapp",
+    Short: "A brief description of your application",
+}
+
+// Integrate with Culebra
+culebra.UseWithCobra(rootCmd)
+```
+
+```go
+// With Cobra and Viper using autoload
+rootCmd := &cobra.Command{
+    Use: "myapp",
+    Short: "A brief description of your application",
+}
+
+// Configure Viper for autoload - this triggers culebra's autoload mechanism
+// Setting config name enables autoload for .lua files
+viper.SetConfigName("example")
+// Adding config paths works with autoload - culebra will search this path for .lua files
+viper.AddConfigPath("$HOME/.config/example")
+
+// Enable Cobra integration to load automatically $HOME/.config/example/example.lua
 culebra.UseWithCobra(rootCmd)
 ```
 
