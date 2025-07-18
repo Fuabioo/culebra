@@ -1,4 +1,5 @@
 -- Example Lua configuration file
+
 app = {
     name = "My Awesome App",
     version = "1.0.0"

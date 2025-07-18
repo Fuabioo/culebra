@@ -33,7 +33,7 @@ func Load(cfg Config) (map[string]any, error) {
 		return nil, fmt.Errorf("failed to execute lua config: %w", err)
 	}
 
-	// Check if the script returned a value (Neovim-style)
+	// Check if the Lua script returned a table
 	if L.GetTop() > 0 {
 		returnValue := L.Get(-1)
 		if table, ok := returnValue.(*lua.LTable); ok {

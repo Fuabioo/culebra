@@ -1,5 +1,9 @@
 -- Neovim-style configuration with functions and modular setup
+-- Neovim-style configuration with functions and modular setup
 local config = {}
+
+-- Helper functions (like Neovim's vim.fn)
+
 
 -- Helper functions (like Neovim's vim.fn)
 local function env(key, default)
@@ -7,11 +11,13 @@ local function env(key, default)
 end
 
 local function setup_database()
+    -- Database configuration
+
     local db_config = {
         host = env("DB_HOST", "localhost"),
         port = tonumber(env("DB_PORT", "5432")),
         name = env("DB_NAME", "myapp_db"),
-        user = env("DB_USER", "postgres"),
+        -- user = env("DB_USER", "postgres"),
         ssl_mode = env("DB_SSL", "disable")
     }
 
@@ -29,6 +35,8 @@ local function setup_database()
 end
 
 local function setup_server()
+    -- Server configuration
+
     local server_config = {
         http = {
             port = tonumber(env("PORT", "8080")),
@@ -53,6 +61,8 @@ local function setup_server()
 end
 
 local function setup_logging()
+    -- Logging configuration
+
     local log_level = env("LOG_LEVEL", "info")
     local is_prod = env("ENVIRONMENT") == "production"
 
@@ -67,7 +77,8 @@ local function setup_logging()
 end
 
 -- Plugin-like configuration modules
-local plugins = {
+local plugins = {  -- Plugin-like configuration modules
+
     metrics = {
         enabled = env("METRICS_ENABLED", "true") == "true",
         endpoint = "/metrics",

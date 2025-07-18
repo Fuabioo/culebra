@@ -17,12 +17,20 @@ func main() {
 			fmt.Printf("App Name: %s\n", viper.GetString("app.name"))
 			fmt.Printf("App Version: %s\n", viper.GetString("app.version"))
 			fmt.Printf("Database Host: %s\n", viper.GetString("database.host"))
-			fmt.Printf("Database Port: %d\n", viper.GetInt("database.port"))
+			port := viper.GetInt("database.port")
+			if port == 0 {
+				log.Fatal("Database port not set or invalid")
+			}
+			fmt.Printf("Database Port: %d\n", port)
 			fmt.Printf("Debug Mode: %t\n", viper.GetBool("debug"))
 		},
 	}
 
+	// Option 1: Full integration with auto-detection AND explicit --config flag
 	culebra.UseWithCobra(rootCmd)
+
+	// Option 2: Just auto-detection without --config flag (uncomment to try)
+	// culebra.AutoLoadLua(rootCmd)
 
 	if err := rootCmd.Execute(); err != nil {
 		log.Fatal(err)
