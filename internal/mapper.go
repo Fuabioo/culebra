@@ -5,6 +5,10 @@ import (
 )
 
 func LuaToGo(lv lua.LValue) any {
+	return LuaToGoWithConfig(lv, false)
+}
+
+func LuaToGoWithConfig(lv lua.LValue, convertArrays bool) any {
 	switch v := lv.(type) {
 	case *lua.LNilType:
 		return nil
@@ -15,7 +19,10 @@ func LuaToGo(lv lua.LValue) any {
 	case lua.LString:
 		return string(v)
 	case *lua.LTable:
-		return luaTableToGoMap(v)
+		if convertArrays && isLuaArray(v) {
+			return luaTableToGoSlice(v, convertArrays)
+		}
+		return luaTableToGoMap(v, convertArrays)
 	default:
 		return v.String()
 	}
@@ -44,11 +51,57 @@ func GoToLua(L *lua.LState, value any) lua.LValue {
 	}
 }
 
-func luaTableToGoMap(table *lua.LTable) map[string]any {
+func luaTableToGoMap(table *lua.LTable, convertArrays bool) map[string]any {
 	result := make(map[string]any)
 	table.ForEach(func(key, value lua.LValue) {
-		result[key.String()] = LuaToGo(value)
+		result[key.String()] = LuaToGoWithConfig(value, convertArrays)
 	})
+	return result
+}
+
+// isLuaArray checks if a Lua table is an array (sequential integer keys starting from 1)
+func isLuaArray(table *lua.LTable) bool {
+	length := table.Len()
+	if length == 0 {
+		return false
+	}
+
+	// Check if all keys from 1 to length exist and are the only keys
+	for i := 1; i <= length; i++ {
+		if table.RawGetInt(i) == lua.LNil {
+			return false
+		}
+	}
+
+	// Check that there are no other keys
+	hasOtherKeys := false
+	table.ForEach(func(key, value lua.LValue) {
+		if keyType := key.Type(); keyType != lua.LTNumber {
+			hasOtherKeys = true
+			return
+		}
+		if keyNum, ok := key.(lua.LNumber); ok {
+			keyInt := int(keyNum)
+			if keyInt < 1 || keyInt > length || float64(keyInt) != float64(keyNum) {
+				hasOtherKeys = true
+				return
+			}
+		}
+	})
+
+	return !hasOtherKeys
+}
+
+// luaTableToGoSlice converts a Lua array table to a Go slice
+func luaTableToGoSlice(table *lua.LTable, convertArrays bool) []any {
+	length := table.Len()
+	result := make([]any, length)
+
+	for i := 1; i <= length; i++ {
+		value := table.RawGetInt(i)
+		result[i-1] = LuaToGoWithConfig(value, convertArrays)
+	}
+
 	return result
 }
 

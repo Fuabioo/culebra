@@ -68,7 +68,7 @@ func TestLuaTableToGoMap(t *testing.T) {
 	table.RawSetString("key2", lua.LNumber(42))
 	table.RawSetString("key3", lua.LBool(true))
 
-	result := luaTableToGoMap(table)
+	result := luaTableToGoMap(table, false)
 
 	if result["key1"] != "value1" {
 		t.Errorf("Expected key1='value1', got %v", result["key1"])

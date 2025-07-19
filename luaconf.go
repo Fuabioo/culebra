@@ -9,8 +9,9 @@ import (
 )
 
 type Config struct {
-	FilePath string
-	Globals  map[string]any
+	FilePath      string
+	Globals       map[string]any
+	ConvertArrays bool // Convert Lua arrays to Go slices instead of maps
 }
 
 func Load(cfg Config) (map[string]any, error) {
@@ -39,7 +40,7 @@ func Load(cfg Config) (map[string]any, error) {
 		if table, ok := returnValue.(*lua.LTable); ok {
 			result := make(map[string]any)
 			table.ForEach(func(key, value lua.LValue) {
-				result[key.String()] = internal.LuaToGo(value)
+				result[key.String()] = internal.LuaToGoWithConfig(value, cfg.ConvertArrays)
 			})
 			return result, nil
 		}
@@ -50,11 +51,26 @@ func Load(cfg Config) (map[string]any, error) {
 	globalTable := L.Get(lua.GlobalsIndex).(*lua.LTable)
 	globalTable.ForEach(func(key, value lua.LValue) {
 		if keyStr := key.String(); keyStr != "_G" && !isBuiltinGlobal(keyStr) {
-			result[keyStr] = internal.LuaToGo(value)
+			result[keyStr] = internal.LuaToGoWithConfig(value, cfg.ConvertArrays)
 		}
 	})
 
 	return result, nil
+}
+
+// LoadWithArrays loads a Lua config file and converts arrays to Go slices
+func LoadWithArrays(filePath string) (map[string]any, error) {
+	return Load(Config{FilePath: filePath, ConvertArrays: true})
+}
+
+// LoadWithGlobals loads a Lua config file with predefined global variables
+func LoadWithGlobals(filePath string, globals map[string]any) (map[string]any, error) {
+	return Load(Config{FilePath: filePath, Globals: globals})
+}
+
+// LoadWithArraysAndGlobals loads a Lua config file with both array conversion and global variables
+func LoadWithArraysAndGlobals(filePath string, globals map[string]any) (map[string]any, error) {
+	return Load(Config{FilePath: filePath, Globals: globals, ConvertArrays: true})
 }
 
 func isBuiltinGlobal(key string) bool {
