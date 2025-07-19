@@ -7,9 +7,11 @@ default:
 
 # Run the basic example
 example:
+    cd examples/arrays && go run main.go
     cd examples/basic && go run main.go --config config.lua
     cd examples/basic && go run main.go --config config-neovim-style.lua
     cd examples/autoload && go run main.go
+    cd examples/arrays && go run main.go
 
 # Run tests
 test:
