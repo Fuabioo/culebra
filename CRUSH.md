@@ -5,7 +5,7 @@
 # Run tests
 just test
 
-# Run tests with coverage
+# Run tests with coverage and view html report
 just test-coverage
 
 # Lint code
@@ -20,16 +20,19 @@ just check
 
 ## Example Commands
 ```bash
-# Run the basic example
+# Run all examples (basic, autoload, arrays, advanced, viper-showcase)
 just example
 
-# Build example binary
+# Build all example binaries
 just build
+
+# Clean build artifacts
+just clean
 ```
 
 ## Development Workflow
 ```bash
-# Full development workflow
+# Full development workflow (format, lint, test, examples)
 just dev
 ```
 
@@ -45,13 +48,28 @@ just tidy
 ## Project Structure
 - `luaconf.go` - Core Lua config loading
 - `viper.go` - Viper integration
-- `cobra.go` - Cobra CLI integration  
-- `internal/mapper.go` - Lua ↔ Go type conversion
-- `examples/basic/` - Example CLI app
+- `cobra.go` - Cobra CLI integration with array conversion
+- `internal/mapper.go` - Lua ↔ Go type conversion with array support
+- `examples/basic/` - Basic usage example
+- `examples/autoload/` - Automatic config detection
+- `examples/arrays/` - Array handling demonstration
+- `examples/advanced/` - Complex Lua config with environment logic
+- `examples/viper-showcase/` - Comprehensive Viper Get functions demo
 - `lua/stdlib.lua` - Optional Lua helpers
 
 ## Key Features
-- Load `.lua` files as configuration
-- Optional Viper integration with `BindToViper()`
-- One-liner Cobra integration with `UseWithCobra()`
+- Load `.lua` files as configuration with full Lua programmability
+- Optional Viper integration with `BindToViper()` and comprehensive Get function support
+- One-liner Cobra integration with `UseWithCobra()` and automatic array conversion
 - Zero dependencies on Cobra/Viper for core functionality
+- Lua array to Go slice conversion with `ConvertArrays` flag
+- Environment-specific configuration with conditional logic
+- Comprehensive test coverage (80.5% overall, 98.6% internal package)
+
+## Test Coverage
+- **43+ tests** covering all functionality
+- **viper_comprehensive_test.go** - Tests all 20+ Viper Get functions
+- **Type conversion tests** - Lua ↔ Go type mapping
+- **Array handling tests** - Array conversion scenarios
+- **Edge case tests** - Error conditions and boundary cases
+- **Integration tests** - Viper and Cobra integration
