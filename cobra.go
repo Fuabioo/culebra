@@ -16,63 +16,105 @@ func UseWithCobra(cmd *cobra.Command) {
 	cmd.PersistentFlags().StringVar(&configFile, "config", "", "config file (supports .lua, .yml, .json)")
 
 	cobra.OnInitialize(func() {
-		// If config file is explicitly provided, use it
-		if configFile != "" {
-			loadConfig(cmd, configFile)
-			return
-		}
-
-		// Check if Viper has a config file path configured
-		if viperConfigFile := viper.ConfigFileUsed(); viperConfigFile != "" {
-			loadConfig(cmd, viperConfigFile)
-			return
-		}
-
-		// Check if SetConfigName was called - enable autoload for Lua files
-		configName := getViperConfigName()
-		if configName != "" {
-			configPaths := getViperConfigPaths()
-
-			// If no paths are configured, default to current directory
-			if len(configPaths) == 0 {
-				configPaths = []string{"."}
-			}
-
-			// Try to find .lua version in all configured paths
-			for _, path := range configPaths {
-				luaFile := filepath.Join(path, configName+".lua")
-				if tryLuaConfig(cmd, luaFile) {
-					return
-				}
-			}
-		}
+		initializeConfig(cmd, configFile)
 	})
 }
 
-// getViperConfigName uses reflection to get the config name from viper
-func getViperConfigName() string {
+// initializeConfig handles the configuration loading logic
+func initializeConfig(cmd *cobra.Command, configFile string) {
+	// If config file is explicitly provided, use it
+	if configFile != "" {
+		loadConfig(cmd, configFile)
+		return
+	}
+
+	// Check if Viper has a config file path configured
+	if viperConfigFile := viper.ConfigFileUsed(); viperConfigFile != "" {
+		loadConfig(cmd, viperConfigFile)
+		return
+	}
+
+	// Try autoloading Lua configuration
+	tryAutoloadLua(cmd)
+}
+
+// tryAutoloadLua attempts to automatically load Lua configuration files
+func tryAutoloadLua(cmd *cobra.Command) {
+	configName := getViperConfigName()
+	if configName == "" {
+		return
+	}
+
+	configPaths := getViperConfigPaths()
+	// If no paths are configured, default to current directory
+	if len(configPaths) == 0 {
+		configPaths = []string{"."}
+	}
+
+	// Try to find .lua version in all configured paths
+	for _, path := range configPaths {
+		luaFile := filepath.Join(path, configName+".lua")
+		if tryLuaConfig(cmd, luaFile) {
+			return
+		}
+	}
+}
+
+// getViperConfigName safely attempts to get the config name from viper
+// Returns empty string if unable to determine
+func getViperConfigName() (result string) {
+	// Try to use reflection with proper error handling
+	defer func() {
+		_ = recover() // Ignore panics from reflection
+	}()
+
 	v := viper.GetViper()
-	rv := reflect.ValueOf(v).Elem()
+	rv := reflect.ValueOf(v)
+	if rv.Kind() == reflect.Ptr {
+		rv = rv.Elem()
+	}
+
+	if rv.Kind() != reflect.Struct {
+		return ""
+	}
+
 	field := rv.FieldByName("configName")
-	if field.IsValid() && field.Kind() == reflect.String {
+	if field.IsValid() && field.Kind() == reflect.String && field.CanInterface() {
 		return field.String()
 	}
 	return ""
 }
 
-// getViperConfigPaths uses reflection to get the config paths from viper
-func getViperConfigPaths() []string {
+// getViperConfigPaths safely attempts to get the config paths from viper
+// Returns empty slice if unable to determine
+func getViperConfigPaths() (result []string) {
+	// Try to use reflection with proper error handling
+	defer func() {
+		_ = recover() // Ignore panics from reflection
+	}()
+
+	result = []string{}
 	v := viper.GetViper()
-	rv := reflect.ValueOf(v).Elem()
+	rv := reflect.ValueOf(v)
+	if rv.Kind() == reflect.Ptr {
+		rv = rv.Elem()
+	}
+
+	if rv.Kind() != reflect.Struct {
+		return result
+	}
+
 	field := rv.FieldByName("configPaths")
-	if field.IsValid() && field.Kind() == reflect.Slice {
+	if field.IsValid() && field.Kind() == reflect.Slice && field.CanInterface() {
 		paths := make([]string, field.Len())
 		for i := 0; i < field.Len(); i++ {
-			paths[i] = field.Index(i).String()
+			if elem := field.Index(i); elem.Kind() == reflect.String {
+				paths[i] = elem.String()
+			}
 		}
 		return paths
 	}
-	return []string{}
+	return result
 }
 
 // AutoLoadLua automatically detects and loads .lua config files from Viper's config settings
@@ -103,7 +145,10 @@ func loadConfig(cmd *cobra.Command, configFile string) {
 	ext := strings.ToLower(filepath.Ext(configFile))
 
 	if ext == ".lua" {
-		cfg := Config{FilePath: configFile}
+		cfg := Config{
+			FilePath:      configFile,
+			ConvertArrays: true, // Enable array conversion for better Viper integration
+		}
 		if err := BindToViper(cfg, viper.GetViper()); err != nil {
 			cmd.PrintErrf("Error loading config file %s: %v\n", configFile, err)
 		}
@@ -121,7 +166,10 @@ func tryLuaConfig(cmd *cobra.Command, basePath string) bool {
 	nameWithoutExt := strings.TrimSuffix(basePath, filepath.Ext(basePath))
 	luaFile := nameWithoutExt + ".lua"
 
-	cfg := Config{FilePath: luaFile}
+	cfg := Config{
+		FilePath:      luaFile,
+		ConvertArrays: true, // Enable array conversion for better Viper integration
+	}
 	if _, err := Load(cfg); err == nil {
 		if err := BindToViper(cfg, viper.GetViper()); err != nil {
 			cmd.PrintErrf("Error loading lua config file %s: %v\n", luaFile, err)

@@ -27,9 +27,9 @@ func main() {
 	// Setting config name enables autoload for .lua files
 	viper.SetConfigName("example")
 	// Adding config paths works with autoload - culebra will search these paths for .lua files
+	viper.AddConfigPath(".") // Current directory first for this example
 	viper.AddConfigPath("/etc")
 	viper.AddConfigPath("$HOME/.config")
-	viper.AddConfigPath(".")
 
 	// Enable Cobra integration (this handles --config flag and autoloading)
 	culebra.UseWithCobra(rootCmd)

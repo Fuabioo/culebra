@@ -14,6 +14,20 @@ type Config struct {
 	ConvertArrays bool // Convert Lua arrays to Go slices instead of maps
 }
 
+// luaBuiltinGlobals contains all Lua built-in global names
+var luaBuiltinGlobals = map[string]bool{
+	"_VERSION": true, "assert": true, "collectgarbage": true, "dofile": true,
+	"error": true, "getfenv": true, "getmetatable": true, "ipairs": true,
+	"load": true, "loadfile": true, "loadstring": true, "next": true,
+	"pairs": true, "pcall": true, "print": true, "rawequal": true,
+	"rawget": true, "rawset": true, "require": true, "select": true,
+	"setfenv": true, "setmetatable": true, "tonumber": true, "tostring": true,
+	"type": true, "unpack": true, "xpcall": true, "coroutine": true,
+	"debug": true, "io": true, "math": true, "os": true, "package": true,
+	"string": true, "table": true, "_GOPHER_LUA_VERSION": true,
+	"_printregs": true, "channel": true, "module": true, "newproxy": true,
+}
+
 func Load(cfg Config) (map[string]any, error) {
 	if cfg.FilePath == "" {
 		return nil, fmt.Errorf("config file path is required")
@@ -58,33 +72,24 @@ func Load(cfg Config) (map[string]any, error) {
 	return result, nil
 }
 
+// Deprecated: Use Load with Config{FilePath: filePath, ConvertArrays: true} instead
 // LoadWithArrays loads a Lua config file and converts arrays to Go slices
 func LoadWithArrays(filePath string) (map[string]any, error) {
 	return Load(Config{FilePath: filePath, ConvertArrays: true})
 }
 
+// Deprecated: Use Load with Config{FilePath: filePath, Globals: globals} instead
 // LoadWithGlobals loads a Lua config file with predefined global variables
 func LoadWithGlobals(filePath string, globals map[string]any) (map[string]any, error) {
 	return Load(Config{FilePath: filePath, Globals: globals})
 }
 
+// Deprecated: Use Load with Config{FilePath: filePath, Globals: globals, ConvertArrays: true} instead
 // LoadWithArraysAndGlobals loads a Lua config file with both array conversion and global variables
 func LoadWithArraysAndGlobals(filePath string, globals map[string]any) (map[string]any, error) {
 	return Load(Config{FilePath: filePath, Globals: globals, ConvertArrays: true})
 }
 
 func isBuiltinGlobal(key string) bool {
-	builtins := map[string]bool{
-		"_VERSION": true, "assert": true, "collectgarbage": true, "dofile": true,
-		"error": true, "getfenv": true, "getmetatable": true, "ipairs": true,
-		"load": true, "loadfile": true, "loadstring": true, "next": true,
-		"pairs": true, "pcall": true, "print": true, "rawequal": true,
-		"rawget": true, "rawset": true, "require": true, "select": true,
-		"setfenv": true, "setmetatable": true, "tonumber": true, "tostring": true,
-		"type": true, "unpack": true, "xpcall": true, "coroutine": true,
-		"debug": true, "io": true, "math": true, "os": true, "package": true,
-		"string": true, "table": true, "_GOPHER_LUA_VERSION": true,
-		"_printregs": true, "channel": true, "module": true, "newproxy": true,
-	}
-	return builtins[key]
+	return luaBuiltinGlobals[key]
 }

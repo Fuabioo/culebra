@@ -1,6 +1,8 @@
 package internal
 
 import (
+	"fmt"
+
 	"github.com/yuin/gopher-lua"
 )
 
@@ -36,18 +38,39 @@ func GoToLua(L *lua.LState, value any) lua.LValue {
 		return lua.LBool(v)
 	case int:
 		return lua.LNumber(v)
+	case int8:
+		return lua.LNumber(v)
+	case int16:
+		return lua.LNumber(v)
+	case int32:
+		return lua.LNumber(v)
 	case int64:
+		return lua.LNumber(v)
+	case uint:
+		return lua.LNumber(v)
+	case uint8:
+		return lua.LNumber(v)
+	case uint16:
+		return lua.LNumber(v)
+	case uint32:
+		return lua.LNumber(v)
+	case uint64:
+		return lua.LNumber(v)
+	case float32:
 		return lua.LNumber(v)
 	case float64:
 		return lua.LNumber(v)
 	case string:
 		return lua.LString(v)
+	case []byte:
+		return lua.LString(string(v))
 	case map[string]any:
 		return goMapToLuaTable(L, v)
 	case []any:
 		return goSliceToLuaTable(L, v)
 	default:
-		return lua.LString(v.(string))
+		// Safe conversion using fmt.Sprintf to avoid panic
+		return lua.LString(fmt.Sprintf("%v", v))
 	}
 }
 
@@ -66,30 +89,50 @@ func isLuaArray(table *lua.LTable) bool {
 		return false
 	}
 
-	// Check if all keys from 1 to length exist and are the only keys
+	// Check if all keys from 1 to length exist
+	if !hasSequentialKeys(table, length) {
+		return false
+	}
+
+	// Check that there are no non-array keys
+	return !hasNonArrayKeys(table, length)
+}
+
+// hasSequentialKeys checks if table has all keys from 1 to length
+func hasSequentialKeys(table *lua.LTable, length int) bool {
 	for i := 1; i <= length; i++ {
 		if table.RawGetInt(i) == lua.LNil {
 			return false
 		}
 	}
+	return true
+}
 
-	// Check that there are no other keys
+// hasNonArrayKeys checks if table has any keys that aren't valid array indices
+func hasNonArrayKeys(table *lua.LTable, length int) bool {
 	hasOtherKeys := false
-	table.ForEach(func(key, value lua.LValue) {
-		if keyType := key.Type(); keyType != lua.LTNumber {
+	table.ForEach(func(key, _ lua.LValue) {
+		if hasOtherKeys {
+			return // Early exit if we already found non-array keys
+		}
+
+		// Check if key is a number
+		if key.Type() != lua.LTNumber {
 			hasOtherKeys = true
 			return
 		}
+
+		// Check if the number is a valid array index
 		if keyNum, ok := key.(lua.LNumber); ok {
 			keyInt := int(keyNum)
+			// Valid array indices are integers from 1 to length
 			if keyInt < 1 || keyInt > length || float64(keyInt) != float64(keyNum) {
 				hasOtherKeys = true
-				return
 			}
 		}
 	})
 
-	return !hasOtherKeys
+	return hasOtherKeys
 }
 
 // luaTableToGoSlice converts a Lua array table to a Go slice
