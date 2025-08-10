@@ -221,6 +221,10 @@ end
 -- Run validation
 validate_config()
 
+-- Duration-based configuration strings (parseable by Viper)
+config.security.session.duration = is_production and "24h" or "168h"  -- 1 day vs 1 week
+config.monitoring.interval = is_production and "30s" or "60s"
+
 -- Dynamic configuration based on current time (example)
 local current_hour = tonumber(os.date("%H"))
 config.maintenance_mode = is_production and current_hour >= 2 and current_hour <= 4

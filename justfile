@@ -17,6 +17,8 @@ example:
     cd examples/arrays && go run main.go
     @echo "=== Advanced Example ==="
     cd examples/advanced && go run main.go --config config.lua
+    @echo "=== Viper Showcase Example ==="
+    cd examples/viper-showcase && go run main.go --config config.lua
 
 # Run tests
 test:
@@ -46,6 +48,7 @@ build:
     cd examples/autoload && go build -o autoload-example main.go 
     cd examples/arrays && go build -o arrays-example main.go
     cd examples/advanced && go build -o advanced-example main.go
+    cd examples/viper-showcase && go build -o viper-showcase-example main.go
 
 # Clean build artifacts
 clean:
@@ -53,6 +56,7 @@ clean:
     rm -f examples/autoload/autoload-example
     rm -f examples/arrays/arrays-example
     rm -f examples/advanced/advanced-example
+    rm -f examples/viper-showcase/viper-showcase-example
     rm -f coverage.out coverage.html
 
 # Install dependencies

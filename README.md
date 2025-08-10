@@ -155,6 +155,7 @@ The repository includes comprehensive examples showcasing different use cases:
 - **[`examples/autoload/`](examples/autoload/)** - Automatic configuration discovery  
 - **[`examples/arrays/`](examples/arrays/)** - Array conversion and Viper integration
 - **[`examples/advanced/`](examples/advanced/)** - Complex, environment-aware configuration
+- **[`examples/viper-showcase/`](examples/viper-showcase/)** - Comprehensive demo of ALL Viper Get functions
 
 Run all examples: `just example`
 
