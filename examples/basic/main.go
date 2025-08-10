@@ -26,11 +26,8 @@ func main() {
 		},
 	}
 
-	// Option 1: Full integration with auto-detection AND explicit --config flag
+	// Integrate with Culebra for Lua configuration support
 	culebra.UseWithCobra(rootCmd)
-
-	// Option 2: Just auto-detection without --config flag (uncomment to try)
-	// culebra.AutoLoadLua(rootCmd)
 
 	if err := rootCmd.Execute(); err != nil {
 		log.Fatal(err)

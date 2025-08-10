@@ -276,7 +276,7 @@ func TestLuaTableToGoSlice(t *testing.T) {
 			setup: func() *lua.LTable {
 				innerTable := L.NewTable()
 				innerTable.RawSetInt(1, lua.LString("nested"))
-				
+
 				table := L.NewTable()
 				table.RawSetInt(1, lua.LString("first"))
 				table.RawSetInt(2, innerTable)
@@ -299,7 +299,7 @@ func TestLuaTableToGoSlice(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			table := tt.setup()
 			result := luaTableToGoSlice(table, true)
-			
+
 			if !reflect.DeepEqual(result, tt.expected) {
 				t.Errorf("luaTableToGoSlice() = %v, want %v", result, tt.expected)
 			}
@@ -391,13 +391,13 @@ func TestLuaToGoWithConfigArrayHandling(t *testing.T) {
 		table := L.NewTable()
 		table.RawSetInt(1, lua.LString("first"))
 		table.RawSetInt(2, lua.LString("second"))
-		
+
 		result := LuaToGoWithConfig(table, true)
 		slice, ok := result.([]any)
 		if !ok {
 			t.Fatalf("Expected []any, got %T", result)
 		}
-		
+
 		if len(slice) != 2 || slice[0] != "first" || slice[1] != "second" {
 			t.Errorf("Unexpected slice: %v", slice)
 		}
@@ -408,13 +408,13 @@ func TestLuaToGoWithConfigArrayHandling(t *testing.T) {
 		table := L.NewTable()
 		table.RawSetInt(1, lua.LString("first"))
 		table.RawSetInt(2, lua.LString("second"))
-		
+
 		result := LuaToGoWithConfig(table, false)
 		m, ok := result.(map[string]any)
 		if !ok {
 			t.Fatalf("Expected map[string]any, got %T", result)
 		}
-		
+
 		if m["1"] != "first" || m["2"] != "second" {
 			t.Errorf("Unexpected map: %v", m)
 		}
@@ -424,13 +424,13 @@ func TestLuaToGoWithConfigArrayHandling(t *testing.T) {
 	t.Run("NonArrayTableWithConversion", func(t *testing.T) {
 		table := L.NewTable()
 		table.RawSetString("key", lua.LString("value"))
-		
+
 		result := LuaToGoWithConfig(table, true)
 		m, ok := result.(map[string]any)
 		if !ok {
 			t.Fatalf("Expected map[string]any, got %T", result)
 		}
-		
+
 		if m["key"] != "value" {
 			t.Errorf("Unexpected map: %v", m)
 		}
@@ -439,7 +439,7 @@ func TestLuaToGoWithConfigArrayHandling(t *testing.T) {
 	// Test other Lua types
 	t.Run("OtherTypes", func(t *testing.T) {
 		// These should not be affected by convertArrays flag
-		
+
 		// Default case - unknown type
 		userdata := L.NewUserData()
 		result := LuaToGoWithConfig(userdata, true)
@@ -457,12 +457,12 @@ func TestGoToLuaWithSlices(t *testing.T) {
 	t.Run("SliceAny", func(t *testing.T) {
 		slice := []any{"a", 1, true}
 		result := GoToLua(L, slice)
-		
+
 		table, ok := result.(*lua.LTable)
 		if !ok {
 			t.Fatalf("Expected *lua.LTable, got %T", result)
 		}
-		
+
 		if table.RawGetInt(1).String() != "a" {
 			t.Error("First element mismatch")
 		}
@@ -478,12 +478,12 @@ func TestGoToLuaWithSlices(t *testing.T) {
 	t.Run("MapStringAny", func(t *testing.T) {
 		m := map[string]any{"key": "value", "num": 42}
 		result := GoToLua(L, m)
-		
+
 		table, ok := result.(*lua.LTable)
 		if !ok {
 			t.Fatalf("Expected *lua.LTable, got %T", result)
 		}
-		
+
 		if table.RawGetString("key").String() != "value" {
 			t.Error("String value mismatch")
 		}

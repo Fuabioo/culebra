@@ -26,7 +26,7 @@ func TestGoToLuaPanicRecovery(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			// This should not panic, but return a string representation
 			result := GoToLua(L, tc.value)
-			
+
 			// Should return a LString with the string representation
 			if result.Type() != lua.LTString {
 				t.Errorf("Expected LString for %s, got %v", tc.name, result.Type())
@@ -61,7 +61,7 @@ func TestGoToLuaAllNumericTypes(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			result := GoToLua(L, tc.value)
-			
+
 			// Should return a LNumber
 			if result.Type() != lua.LTNumber {
 				t.Errorf("Expected LNumber for %s, got %v", tc.name, result.Type())

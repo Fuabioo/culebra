@@ -89,7 +89,7 @@ config = {
 	if len(items) != 3 {
 		t.Errorf("expected 3 items, got %d", len(items))
 	}
-	
+
 	for i, item := range items {
 		if item != expected[i] {
 			t.Errorf("expected items[%d]='%v', got '%v'", i, expected[i], item)

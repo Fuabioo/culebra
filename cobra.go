@@ -73,11 +73,11 @@ func getViperConfigName() (result string) {
 	if rv.Kind() == reflect.Ptr {
 		rv = rv.Elem()
 	}
-	
+
 	if rv.Kind() != reflect.Struct {
 		return ""
 	}
-	
+
 	field := rv.FieldByName("configName")
 	if field.IsValid() && field.Kind() == reflect.String && field.CanInterface() {
 		return field.String()
@@ -99,11 +99,11 @@ func getViperConfigPaths() (result []string) {
 	if rv.Kind() == reflect.Ptr {
 		rv = rv.Elem()
 	}
-	
+
 	if rv.Kind() != reflect.Struct {
 		return result
 	}
-	
+
 	field := rv.FieldByName("configPaths")
 	if field.IsValid() && field.Kind() == reflect.Slice && field.CanInterface() {
 		paths := make([]string, field.Len())
@@ -145,7 +145,10 @@ func loadConfig(cmd *cobra.Command, configFile string) {
 	ext := strings.ToLower(filepath.Ext(configFile))
 
 	if ext == ".lua" {
-		cfg := Config{FilePath: configFile}
+		cfg := Config{
+			FilePath:      configFile,
+			ConvertArrays: true, // Enable array conversion for better Viper integration
+		}
 		if err := BindToViper(cfg, viper.GetViper()); err != nil {
 			cmd.PrintErrf("Error loading config file %s: %v\n", configFile, err)
 		}
@@ -163,7 +166,10 @@ func tryLuaConfig(cmd *cobra.Command, basePath string) bool {
 	nameWithoutExt := strings.TrimSuffix(basePath, filepath.Ext(basePath))
 	luaFile := nameWithoutExt + ".lua"
 
-	cfg := Config{FilePath: luaFile}
+	cfg := Config{
+		FilePath:      luaFile,
+		ConvertArrays: true, // Enable array conversion for better Viper integration
+	}
 	if _, err := Load(cfg); err == nil {
 		if err := BindToViper(cfg, viper.GetViper()); err != nil {
 			cmd.PrintErrf("Error loading lua config file %s: %v\n", luaFile, err)

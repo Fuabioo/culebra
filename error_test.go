@@ -45,7 +45,7 @@ func TestErrorConditions(t *testing.T) {
 
 		tmpDir := t.TempDir()
 		restrictedFile := filepath.Join(tmpDir, "restricted.lua")
-		
+
 		// Create file and remove read permissions
 		if err := os.WriteFile(restrictedFile, []byte("test = true"), 0644); err != nil {
 			t.Fatal(err)
@@ -71,7 +71,7 @@ func TestErrorConditions(t *testing.T) {
 			function without_end(
 			unclosed_table = {
 		`
-		
+
 		if err := os.WriteFile(invalidFile, []byte(invalidContent), 0644); err != nil {
 			t.Fatal(err)
 		}
@@ -89,7 +89,7 @@ func TestErrorConditions(t *testing.T) {
 			-- This will cause a runtime error
 			error("intentional runtime error")
 		`
-		
+
 		if err := os.WriteFile(errorFile, []byte(errorContent), 0644); err != nil {
 			t.Fatal(err)
 		}
@@ -102,7 +102,7 @@ func TestErrorConditions(t *testing.T) {
 
 	t.Run("BindToViperWithInvalidFile", func(t *testing.T) {
 		viper.Reset()
-		
+
 		cfg := Config{FilePath: "/nonexistent/file.lua"}
 		err := BindToViper(cfg, viper.GetViper())
 		if err == nil {
@@ -116,7 +116,7 @@ func TestFileSystemEdgeCases(t *testing.T) {
 	t.Run("LoadEmptyFile", func(t *testing.T) {
 		tmpDir := t.TempDir()
 		emptyFile := filepath.Join(tmpDir, "empty.lua")
-		
+
 		if err := os.WriteFile(emptyFile, []byte(""), 0644); err != nil {
 			t.Fatal(err)
 		}
@@ -142,7 +142,7 @@ func TestFileSystemEdgeCases(t *testing.T) {
 				with no code
 			]]
 		`
-		
+
 		if err := os.WriteFile(commentFile, []byte(commentContent), 0644); err != nil {
 			t.Fatal(err)
 		}
@@ -160,13 +160,13 @@ func TestFileSystemEdgeCases(t *testing.T) {
 	t.Run("LoadVeryLargeFile", func(t *testing.T) {
 		tmpDir := t.TempDir()
 		largeFile := filepath.Join(tmpDir, "large.lua")
-		
+
 		// Create a large Lua configuration file
 		var content string
 		for i := 0; i < 1000; i++ {
 			content += fmt.Sprintf("key_%d = \"value_%d\"\n", i, i)
 		}
-		
+
 		if err := os.WriteFile(largeFile, []byte(content), 0644); err != nil {
 			t.Fatal(err)
 		}
@@ -188,23 +188,23 @@ func TestCobraErrorHandling(t *testing.T) {
 		tmpDir := t.TempDir()
 		invalidFile := filepath.Join(tmpDir, "invalid.lua")
 		invalidContent := `invalid lua syntax {{`
-		
+
 		if err := os.WriteFile(invalidFile, []byte(invalidContent), 0644); err != nil {
 			t.Fatal(err)
 		}
 
 		viper.Reset()
-		
+
 		cmd := &cobra.Command{
 			Use: "test",
 			Run: func(cmd *cobra.Command, args []string) {
 				// Command should not crash even with invalid config
 			},
 		}
-		
+
 		UseWithCobra(cmd)
 		cmd.SetArgs([]string{"--config", invalidFile})
-		
+
 		// This should not panic, error should be handled gracefully
 		err := cmd.Execute()
 		// We don't expect Execute to fail, just the config loading to be handled internally
@@ -218,7 +218,7 @@ func TestCobraErrorHandling(t *testing.T) {
 
 		tmpDir := t.TempDir()
 		restrictedFile := filepath.Join(tmpDir, "restricted.lua")
-		
+
 		// Create file and remove read permissions
 		if err := os.WriteFile(restrictedFile, []byte("test = true"), 0644); err != nil {
 			t.Fatal(err)
@@ -232,7 +232,7 @@ func TestCobraErrorHandling(t *testing.T) {
 
 		viper.Reset()
 		cmd := &cobra.Command{Use: "test"}
-		
+
 		result := tryLuaConfig(cmd, filepath.Join(tmpDir, "restricted"))
 		if result {
 			t.Error("expected false for file with no read permission")
@@ -242,10 +242,10 @@ func TestCobraErrorHandling(t *testing.T) {
 	t.Run("LoadConfigWithNonExistentYamlFile", func(t *testing.T) {
 		viper.Reset()
 		cmd := &cobra.Command{Use: "test"}
-		
+
 		// Should handle non-existent YAML file gracefully
 		loadConfig(cmd, "/nonexistent/file.yaml")
-		
+
 		// No assertion needed, just ensuring it doesn't panic
 	})
 }
@@ -259,7 +259,7 @@ func TestGlobalsErrorHandling(t *testing.T) {
 			-- Use the global variable
 			result = complex_global
 		`
-		
+
 		if err := os.WriteFile(configFile, []byte(configContent), 0644); err != nil {
 			t.Fatal(err)
 		}
@@ -294,14 +294,14 @@ func TestGlobalsErrorHandling(t *testing.T) {
 			value1 = nil_global or "default1"
 			value2 = another_nil or "default2"
 		`
-		
+
 		if err := os.WriteFile(configFile, []byte(configContent), 0644); err != nil {
 			t.Fatal(err)
 		}
 
 		globals := map[string]any{
-			"nil_global":   nil,
-			"another_nil":  nil,
+			"nil_global":  nil,
+			"another_nil": nil,
 		}
 
 		data, err := Load(Config{FilePath: configFile, Globals: globals})
@@ -321,10 +321,10 @@ func TestReflectionErrorHandling(t *testing.T) {
 	t.Run("GetViperConfigNameReflectionFailure", func(t *testing.T) {
 		// This tests the panic recovery in getViperConfigName
 		viper.Reset()
-		
+
 		// Call the function - it should not panic even if reflection fails
 		name := getViperConfigName()
-		
+
 		// The result might be empty due to reflection limitations, but it shouldn't crash
 		_ = name
 	})
@@ -332,10 +332,10 @@ func TestReflectionErrorHandling(t *testing.T) {
 	t.Run("GetViperConfigPathsReflectionFailure", func(t *testing.T) {
 		// This tests the panic recovery in getViperConfigPaths
 		viper.Reset()
-		
+
 		// Call the function - it should not panic even if reflection fails
 		paths := getViperConfigPaths()
-		
+
 		// The result might be empty due to reflection limitations, but it shouldn't crash
 		if paths == nil {
 			t.Error("expected non-nil slice, even if empty")
@@ -352,14 +352,14 @@ func TestConcurrentAccess(t *testing.T) {
 			value = "concurrent_test"
 			counter = 42
 		`
-		
+
 		if err := os.WriteFile(configFile, []byte(configContent), 0644); err != nil {
 			t.Fatal(err)
 		}
 
 		// Run multiple loads concurrently
 		results := make(chan error, 5)
-		
+
 		for i := 0; i < 5; i++ {
 			go func() {
 				_, err := Load(Config{FilePath: configFile})

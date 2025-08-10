@@ -15,9 +15,12 @@ This example demonstrates automatic Lua configuration loading using culebra's bu
 ## Running the example
 
 ```bash
-# Run with default (development) environment
+# Run with explicit config file (autoload mechanism needs refinement)
 cd examples/autoload
-go run main.go
+go run main.go --config example.lua
+
+# Autoload mechanism (currently requires refinement of Viper integration)
+# go run main.go
 
 # Run in development mode (explicit)
 APP_ENV=development go run main.go

@@ -5,13 +5,18 @@
 default:
     @just --list
 
-# Run the basic example
+# Run all examples
 example:
-    cd examples/arrays && go run main.go
+    @echo "=== Basic Example ==="
     cd examples/basic && go run main.go --config config.lua
+    @echo "=== Basic Example (Neovim style) ==="
     cd examples/basic && go run main.go --config config-neovim-style.lua
-    cd examples/autoload && go run main.go
+    @echo "=== Autoload Example ==="
+    cd examples/autoload && go run main.go --config example.lua
+    @echo "=== Arrays Example ==="
     cd examples/arrays && go run main.go
+    @echo "=== Advanced Example ==="
+    cd examples/advanced && go run main.go --config config.lua
 
 # Run tests
 test:
@@ -35,13 +40,19 @@ fmt:
 tidy:
     go mod tidy
 
-# Build the example binary
+# Build all example binaries
 build:
-    cd examples/basic && go build -o example main.go
+    cd examples/basic && go build -o basic-example main.go
+    cd examples/autoload && go build -o autoload-example main.go 
+    cd examples/arrays && go build -o arrays-example main.go
+    cd examples/advanced && go build -o advanced-example main.go
 
 # Clean build artifacts
 clean:
-    rm -f examples/basic/example
+    rm -f examples/basic/basic-example
+    rm -f examples/autoload/autoload-example
+    rm -f examples/arrays/arrays-example
+    rm -f examples/advanced/advanced-example
     rm -f coverage.out coverage.html
 
 # Install dependencies

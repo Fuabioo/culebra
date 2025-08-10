@@ -115,13 +115,13 @@ func hasNonArrayKeys(table *lua.LTable, length int) bool {
 		if hasOtherKeys {
 			return // Early exit if we already found non-array keys
 		}
-		
+
 		// Check if key is a number
 		if key.Type() != lua.LTNumber {
 			hasOtherKeys = true
 			return
 		}
-		
+
 		// Check if the number is a valid array index
 		if keyNum, ok := key.(lua.LNumber); ok {
 			keyInt := int(keyNum)
@@ -131,7 +131,7 @@ func hasNonArrayKeys(table *lua.LTable, length int) bool {
 			}
 		}
 	})
-	
+
 	return hasOtherKeys
 }
 
