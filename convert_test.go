@@ -259,9 +259,9 @@ func TestGoToLuaPanicProtection(t *testing.T) {
 
 	// Test with various Go types that might cause issues
 	testValues := []any{
-		make(chan int),           // Unsupported type
-		func() {},                // Function
-		struct{ X int }{X: 42},   // Struct (not map[string]any)
+		make(chan int),         // Unsupported type
+		func() {},              // Function
+		struct{ X int }{X: 42}, // Struct (not map[string]any)
 	}
 
 	for i, val := range testValues {

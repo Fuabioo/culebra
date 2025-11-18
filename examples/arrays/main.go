@@ -109,7 +109,10 @@ func testBackwardCompatibility() {
 
 func testArrayConversion() {
 	// Load with array conversion (new behavior)
-	data, err := culebra.LoadWithArrays("config-neovim-style.lua")
+	data, err := culebra.Load(culebra.Config{
+		FilePath:      "config-neovim-style.lua",
+		ConvertArrays: true,
+	})
 	if err != nil {
 		log.Fatal("Failed to load neovim config:", err)
 	}
@@ -137,10 +140,11 @@ func testArrayConversion() {
 
 func testViperIntegration() {
 	v := viper.New()
-	
-	// Use AutoBindToViper for seamless integration
+
+	// Use BindToViper with array conversion for seamless integration
 	err := culebra.BindToViper(culebra.Config{
-		FilePath: "config-neovim-style.lua",
+		FilePath:      "config-neovim-style.lua",
+		ConvertArrays: true,
 	}, v)
 	if err != nil {
 		log.Fatal("Failed to bind to viper:", err)
@@ -163,9 +167,10 @@ func testViperIntegration() {
 
 func testStructUnmarshaling() {
 	v := viper.New()
-	
+
 	err := culebra.BindToViper(culebra.Config{
-		FilePath: "config-neovim-style.lua",
+		FilePath:      "config-neovim-style.lua",
+		ConvertArrays: true,
 	}, v)
 	if err != nil {
 		log.Fatal("Failed to bind to viper:", err)
@@ -203,7 +208,10 @@ func testStructUnmarshaling() {
 }
 
 func testComplexConfiguration() {
-	data, err := culebra.LoadWithArrays("config-complex.lua")
+	data, err := culebra.Load(culebra.Config{
+		FilePath:      "config-complex.lua",
+		ConvertArrays: true,
+	})
 	if err != nil {
 		log.Fatal("Failed to load complex config:", err)
 	}

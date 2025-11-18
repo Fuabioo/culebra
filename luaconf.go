@@ -135,14 +135,45 @@ func Load(cfg Config) (result map[string]any, err error) {
 		if convErr != nil {
 			return // Skip if we already hit an error
 		}
-		if keyStr := key.String(); keyStr != "_G" && !isBuiltinGlobal(keyStr) {
-			converted, convertErr := internal.LuaToGoSafe(value, convCfg, 0)
-			if convertErr != nil {
-				convErr = convertErr
-				return
-			}
-			result[keyStr] = converted
+		keyStr := key.String()
+
+		// Skip Lua internal/metadata variables (those starting with underscore)
+		// These include _G, _VERSION, _GOPHER_LUA_VERSION, etc.
+		if len(keyStr) > 0 && keyStr[0] == '_' {
+			return
 		}
+
+		// For builtin names, only filter if it's actually a Lua library
+		// (table containing functions) vs user data (table with config values)
+		if isBuiltinGlobal(keyStr) {
+			switch v := value.(type) {
+			case *lua.LTable:
+				// Check if this table contains functions (Lua library) or just data (user config)
+				hasFunction := false
+				v.ForEach(func(_, val lua.LValue) {
+					if val.Type() == lua.LTFunction {
+						hasFunction = true
+					}
+				})
+				if hasFunction {
+					// This is a Lua library table - skip it
+					return
+				}
+				// User config table with same name as builtin - keep it
+			case *lua.LFunction:
+				// Standalone function with builtin name - skip it
+				return
+			default:
+				// User has overridden a builtin name with a primitive value - keep it
+			}
+		}
+
+		converted, convertErr := internal.LuaToGoSafe(value, convCfg, 0)
+		if convertErr != nil {
+			convErr = convertErr
+			return
+		}
+		result[keyStr] = converted
 	})
 	if convErr != nil {
 		return nil, fmt.Errorf("culebra.Load: %w", convErr)

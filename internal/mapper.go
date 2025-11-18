@@ -41,11 +41,12 @@ func LuaToGoWithConfig(lv lua.LValue, convertArrays bool) any {
 }
 
 // LuaToGoSafe converts a Lua value to a Go value with depth and size limits enforced
-func LuaToGoSafe(lv lua.LValue, cfg ConversionConfig, currentDepth int) (any, error) {
-	// Panic protection
+func LuaToGoSafe(lv lua.LValue, cfg ConversionConfig, currentDepth int) (result any, err error) {
+	// Panic protection - convert panics to errors
 	defer func() {
 		if r := recover(); r != nil {
-			// This should rarely happen, but protect against it anyway
+			err = fmt.Errorf("panic during conversion: %v", r)
+			result = nil
 		}
 	}()
 

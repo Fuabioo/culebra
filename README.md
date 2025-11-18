@@ -23,6 +23,27 @@ cfg := culebra.Config{
 }
 ```
 
+### Integer Precision Limitation
+
+**Lua uses float64 (IEEE 754 double precision) for all numbers**, which can only precisely represent integers up to 2^53-1 (9,007,199,254,740,991). Integers larger than this will lose precision when stored in Lua.
+
+**Impact**: Very large integers (e.g., max int64: 9,223,372,036,854,775,807) will overflow or lose precision when converted.
+
+**Workaround**: Use strings for very large integers if precision is critical:
+```lua
+-- Instead of:
+large_id = 9223372036854775807  -- Will lose precision
+
+-- Use:
+large_id = "9223372036854775807"  -- Preserves exact value
+```
+
+Then parse in Go:
+```go
+idStr := viper.GetString("large_id")
+id, _ := strconv.ParseInt(idStr, 10, 64)
+```
+
 ## 🛠️ Features
 
 - ✅ **Plug-and-play Cobra/Viper integration** - Works like Viper's auto-loading for .json/.yml
