@@ -6,10 +6,20 @@ import (
 	"github.com/yuin/gopher-lua"
 )
 
+// ConversionConfig holds configuration for Lua to Go conversion with safety limits
+type ConversionConfig struct {
+	ConvertArrays bool
+	MaxDepth      int
+	MaxTableSize  int
+}
+
+// LuaToGo converts a Lua value to a Go value without array conversion
 func LuaToGo(lv lua.LValue) any {
 	return LuaToGoWithConfig(lv, false)
 }
 
+// LuaToGoWithConfig converts a Lua value to a Go value with optional array conversion
+// This function does not enforce depth limits. Use LuaToGoSafe for production code.
 func LuaToGoWithConfig(lv lua.LValue, convertArrays bool) any {
 	switch v := lv.(type) {
 	case *lua.LNilType:
@@ -27,6 +37,50 @@ func LuaToGoWithConfig(lv lua.LValue, convertArrays bool) any {
 		return luaTableToGoMap(v, convertArrays)
 	default:
 		return v.String()
+	}
+}
+
+// LuaToGoSafe converts a Lua value to a Go value with depth and size limits enforced
+func LuaToGoSafe(lv lua.LValue, cfg ConversionConfig, currentDepth int) (any, error) {
+	// Panic protection
+	defer func() {
+		if r := recover(); r != nil {
+			// This should rarely happen, but protect against it anyway
+		}
+	}()
+
+	// Check depth limit
+	if currentDepth > cfg.MaxDepth {
+		return nil, fmt.Errorf("maximum nesting depth exceeded (%d levels)", cfg.MaxDepth)
+	}
+
+	switch v := lv.(type) {
+	case *lua.LNilType:
+		return nil, nil
+	case lua.LBool:
+		return bool(v), nil
+	case lua.LNumber:
+		return float64(v), nil
+	case lua.LString:
+		return string(v), nil
+	case *lua.LTable:
+		// Check table size limit if configured
+		if cfg.MaxTableSize > 0 {
+			size := 0
+			v.ForEach(func(_, _ lua.LValue) {
+				size++
+			})
+			if size > cfg.MaxTableSize {
+				return nil, fmt.Errorf("table size (%d) exceeds maximum allowed (%d)", size, cfg.MaxTableSize)
+			}
+		}
+
+		if cfg.ConvertArrays && isLuaArray(v) {
+			return luaTableToGoSliceSafe(v, cfg, currentDepth+1)
+		}
+		return luaTableToGoMapSafe(v, cfg, currentDepth+1)
+	default:
+		return v.String(), nil
 	}
 }
 
@@ -80,6 +134,27 @@ func luaTableToGoMap(table *lua.LTable, convertArrays bool) map[string]any {
 		result[key.String()] = LuaToGoWithConfig(value, convertArrays)
 	})
 	return result
+}
+
+// luaTableToGoMapSafe converts a Lua table to a Go map with safety limits
+func luaTableToGoMapSafe(table *lua.LTable, cfg ConversionConfig, currentDepth int) (map[string]any, error) {
+	result := make(map[string]any)
+	var convErr error
+	table.ForEach(func(key, value lua.LValue) {
+		if convErr != nil {
+			return // Skip if we already hit an error
+		}
+		converted, err := LuaToGoSafe(value, cfg, currentDepth)
+		if err != nil {
+			convErr = err
+			return
+		}
+		result[key.String()] = converted
+	})
+	if convErr != nil {
+		return nil, convErr
+	}
+	return result, nil
 }
 
 // isLuaArray checks if a Lua table is an array (sequential integer keys starting from 1)
@@ -146,6 +221,23 @@ func luaTableToGoSlice(table *lua.LTable, convertArrays bool) []any {
 	}
 
 	return result
+}
+
+// luaTableToGoSliceSafe converts a Lua array table to a Go slice with safety limits
+func luaTableToGoSliceSafe(table *lua.LTable, cfg ConversionConfig, currentDepth int) ([]any, error) {
+	length := table.Len()
+	result := make([]any, length)
+
+	for i := 1; i <= length; i++ {
+		value := table.RawGetInt(i)
+		converted, err := LuaToGoSafe(value, cfg, currentDepth)
+		if err != nil {
+			return nil, err
+		}
+		result[i-1] = converted
+	}
+
+	return result, nil
 }
 
 func goMapToLuaTable(L *lua.LState, m map[string]any) *lua.LTable {

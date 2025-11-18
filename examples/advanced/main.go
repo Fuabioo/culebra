@@ -87,7 +87,7 @@ func main() {
 	}
 
 	// Use Culebra for Lua configuration support
-	culebra.UseWithCobra(rootCmd)
+	culebra.EnableLuaConfig(rootCmd)
 
 	if err := rootCmd.Execute(); err != nil {
 		log.Fatal(err)

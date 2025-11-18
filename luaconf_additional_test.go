@@ -28,7 +28,7 @@ debug_enabled = global_debug
 		"global_debug":    true,
 	}
 
-	data, err := LoadWithGlobals(configPath, globals)
+	data, err := Load(Config{FilePath: configPath, Globals: globals})
 	if err != nil {
 		t.Fatalf("Failed to load config with globals: %v", err)
 	}
@@ -74,7 +74,7 @@ config = {
 		"global_prefix": "custom",
 	}
 
-	data, err := LoadWithArraysAndGlobals(configPath, globals)
+	data, err := Load(Config{FilePath: configPath, Globals: globals, ConvertArrays: true})
 	if err != nil {
 		t.Fatalf("Failed to load config: %v", err)
 	}
@@ -146,20 +146,20 @@ function without end
 		t.Error("expected error for invalid Lua syntax, got nil")
 	}
 
-	// Test with all helper functions
-	_, err = LoadWithArrays(configPath)
+	// Test with Load using different config options
+	_, err = Load(Config{FilePath: configPath, ConvertArrays: true})
 	if err == nil {
-		t.Error("LoadWithArrays should fail with invalid syntax")
+		t.Error("Load with ConvertArrays should fail with invalid syntax")
 	}
 
-	_, err = LoadWithGlobals(configPath, map[string]any{})
+	_, err = Load(Config{FilePath: configPath, Globals: map[string]any{}})
 	if err == nil {
-		t.Error("LoadWithGlobals should fail with invalid syntax")
+		t.Error("Load with Globals should fail with invalid syntax")
 	}
 
-	_, err = LoadWithArraysAndGlobals(configPath, map[string]any{})
+	_, err = Load(Config{FilePath: configPath, Globals: map[string]any{}, ConvertArrays: true})
 	if err == nil {
-		t.Error("LoadWithArraysAndGlobals should fail with invalid syntax")
+		t.Error("Load with Globals and ConvertArrays should fail with invalid syntax")
 	}
 }
 
@@ -213,7 +213,7 @@ slice_val = global_slice
 		"global_slice":  []any{"a", "b", "c"},
 	}
 
-	data, err := LoadWithGlobals(configPath, globals)
+	data, err := Load(Config{FilePath: configPath, Globals: globals})
 	if err != nil {
 		t.Fatalf("Failed to load config: %v", err)
 	}

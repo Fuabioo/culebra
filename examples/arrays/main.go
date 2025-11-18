@@ -139,7 +139,7 @@ func testViperIntegration() {
 	v := viper.New()
 	
 	// Use AutoBindToViper for seamless integration
-	err := culebra.AutoBindToViper(culebra.Config{
+	err := culebra.BindToViper(culebra.Config{
 		FilePath: "config-neovim-style.lua",
 	}, v)
 	if err != nil {
@@ -164,7 +164,7 @@ func testViperIntegration() {
 func testStructUnmarshaling() {
 	v := viper.New()
 	
-	err := culebra.AutoBindToViper(culebra.Config{
+	err := culebra.BindToViper(culebra.Config{
 		FilePath: "config-neovim-style.lua",
 	}, v)
 	if err != nil {

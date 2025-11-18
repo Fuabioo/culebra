@@ -184,7 +184,7 @@ func TestFileSystemEdgeCases(t *testing.T) {
 
 // TestCobraErrorHandling tests error handling in Cobra integration
 func TestCobraErrorHandling(t *testing.T) {
-	t.Run("UseWithCobraInvalidConfig", func(t *testing.T) {
+	t.Run("EnableLuaConfigInvalidConfig", func(t *testing.T) {
 		tmpDir := t.TempDir()
 		invalidFile := filepath.Join(tmpDir, "invalid.lua")
 		invalidContent := `invalid lua syntax {{`
@@ -202,7 +202,7 @@ func TestCobraErrorHandling(t *testing.T) {
 			},
 		}
 
-		UseWithCobra(cmd)
+		EnableLuaConfig(cmd)
 		cmd.SetArgs([]string{"--config", invalidFile})
 
 		// This should not panic, error should be handled gracefully

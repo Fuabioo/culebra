@@ -106,23 +106,6 @@ func TestArrayConversion(t *testing.T) {
 		}
 	})
 
-	// Test convenience function
-	t.Run("LoadWithArrays", func(t *testing.T) {
-		data, err := LoadWithArrays(configPath)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		simpleArray, ok := data["simple_array"].([]any)
-		if !ok {
-			t.Errorf("expected simple_array to be []any, got %T", data["simple_array"])
-		}
-
-		expectedSimple := []any{"one", "two", "three"}
-		if !reflect.DeepEqual(simpleArray, expectedSimple) {
-			t.Errorf("expected %v, got %v", expectedSimple, simpleArray)
-		}
-	})
 }
 
 func TestViperIntegration(t *testing.T) {
@@ -142,10 +125,10 @@ func TestViperIntegration(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// Test AutoBindToViper
-	t.Run("AutoBindToViper", func(t *testing.T) {
+	// Test BindToViper with arrays
+	t.Run("BindToViper", func(t *testing.T) {
 		v := viper.New()
-		err := AutoBindToViper(Config{FilePath: configPath}, v)
+		err := BindToViper(Config{FilePath: configPath, ConvertArrays: true}, v)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -173,10 +156,10 @@ func TestViperIntegration(t *testing.T) {
 		}
 	})
 
-	// Test BindToViperWithArrays convenience function
-	t.Run("BindToViperWithArrays", func(t *testing.T) {
+	// Test BindToViper with explicit ConvertArrays flag
+	t.Run("BindToViperExplicit", func(t *testing.T) {
 		v := viper.New()
-		err := BindToViperWithArrays(configPath, v)
+		err := BindToViper(Config{FilePath: configPath, ConvertArrays: true}, v)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -219,7 +202,7 @@ func TestStructUnmarshaling(t *testing.T) {
 	}
 
 	v := viper.New()
-	err := AutoBindToViper(Config{FilePath: configPath}, v)
+	err := BindToViper(Config{FilePath: configPath, ConvertArrays: true}, v)
 	if err != nil {
 		t.Fatal(err)
 	}

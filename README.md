@@ -1,16 +1,57 @@
 # 📦 Culebra
 
-Culebra, meaning 'snake' in Costa Rica, is a library for loading **Lua scripts as configuration files** and optionally bind them into **Viper** and integrate with **Cobra** CLI apps.
+Culebra, meaning 'snake' in Costa Rica, is a library for loading **Lua scripts as configuration files** with seamless integration for **Viper** and **Cobra** CLI apps.
 
 > [!IMPORTANT]
-> The lua config will not replace existing cobra options like yml and json, it should work alongside them.
+> Lua config works **alongside** existing config formats (.yml, .json) - it doesn't replace them.
+
+## ⚠️ Security Notice
+
+**Lua configurations have full access to the Lua standard library**, including file I/O (`io.*`), system commands (`os.*`), and environment variables. Only load configuration files from **trusted sources**.
+
+Culebra provides safety limits:
+- **MaxDepth**: Prevents stack overflow from deeply nested tables (default: 100 levels)
+- **MaxTableSize**: Limits entries per table to prevent memory exhaustion (default: unlimited)
+- **Panic Protection**: All public functions recover from panics and return errors
+
+For untrusted configs, set appropriate limits:
+```go
+cfg := culebra.Config{
+    FilePath:     "config.lua",
+    MaxDepth:     50,      // Max 50 levels of nesting
+    MaxTableSize: 10000,   // Max 10k entries per table
+}
+```
 
 ## 🛠️ Features
 
-- Load Lua scripts as dynamic configuration sources with support for both traditional and Neovim-style configurations.
-- Return configurations as `map[string]any` or easily bind them into Viper.
-- Integrate with Cobra through a simple one-liner: `culebra.UseWithCobra()`.
-- Provide flexibility with zero dependencies on Cobra/Viper — their usage is optional.
+- ✅ **Plug-and-play Cobra/Viper integration** - Works like Viper's auto-loading for .json/.yml
+- ✅ **Zero dependencies for core** - Cobra/Viper are optional
+- ✅ **Two config styles** - Traditional (global vars) and Neovim-style (return statement)
+- ✅ **Array conversion** - Lua arrays become Go slices
+- ✅ **Global variables** - Pass Go values into Lua configs
+- ✅ **Type conversion API** - Direct Lua ↔ Go conversion functions
+- ✅ **Defensive programming** - Depth limits, panic protection, clear errors
+
+## 📦 Installation
+
+```bash
+go get github.com/Fuabioo/culebra
+```
+
+## 🚀 Quick Start
+
+Choose your starting point:
+
+| Example | When to use | What it shows |
+|---------|-------------|---------------|
+| [basic/](examples/basic/) | **Start here** - First time using Culebra | Basic Lua config with Cobra/Viper integration |
+| [autoload/](examples/autoload/) | You want automatic .lua file discovery | How Viper search paths work with .lua files |
+| [arrays/](examples/arrays/) | Your config has lists/arrays | Array conversion and Viper integration |
+| [advanced/](examples/advanced/) | Complex, environment-aware configs | Functions, conditionals, environment logic |
+| [viper-showcase/](examples/viper-showcase/) | Using all Viper Get* functions | Comprehensive demo of Viper integration |
+
+Run all examples: `just example`
 
 ## 📝 Configuration Styles
 
@@ -65,28 +106,111 @@ assert(config.database.host, "Database host is required")
 return config
 ```
 
-## 🔍 API
+## 🔍 API Reference
 
-- ✅ `Load(cfg Config) (map[string]any, error)` — Loads Lua configuration from file.
-- ✅ `LoadWithArrays(filePath string) (map[string]any, error)` — Loads Lua config with array conversion.
-- ✅ `LoadWithGlobals(filePath string, globals map[string]any) (map[string]any, error)` — Loads Lua config with global variables.
-- ✅ `LoadWithArraysAndGlobals(filePath string, globals map[string]any) (map[string]any, error)` — Loads with both features.
-- ✅ `BindToViper(cfg Config, v *viper.Viper) error` — Injects configuration into Viper.
-- ✅ `UseWithCobra(cmd *cobra.Command)` — Adds `--config` flag with automatic Lua discovery.
-- ✅ Includes comprehensive error handling and validation.
-- ✅ Supports both traditional and Neovim-style configuration patterns.
+### Core Functions
 
-## 📦 Dependencies
+#### `Load(cfg Config) (map[string]any, error)`
+Loads Lua configuration from a file with full safety protections.
 
-- `github.com/yuin/gopher-lua` — Lua VM in Go.
-- `github.com/spf13/viper` (optional).
-- `github.com/spf13/cobra` (optional).
+```go
+cfg := culebra.Config{
+    FilePath:      "config.lua",
+    ConvertArrays: true,        // Convert Lua arrays to Go slices
+    MaxDepth:      100,          // Max nesting depth (0 = default 100)
+    MaxTableSize:  10000,        // Max entries per table (0 = unlimited)
+    Globals: map[string]any{    // Optional: Go values accessible in Lua
+        "environment": "production",
+    },
+}
+data, err := culebra.Load(cfg)
+```
+
+#### `BindToViper(cfg Config, v *viper.Viper) error`
+Loads Lua config and injects it into Viper.
+
+```go
+cfg := culebra.Config{
+    FilePath:      "config.lua",
+    ConvertArrays: true,
+}
+err := culebra.BindToViper(cfg, viper.GetViper())
+// Now use viper.GetString("database.host"), etc.
+```
+
+#### `EnableLuaConfig(cmd *cobra.Command)`
+Adds seamless Lua config support to Cobra. Works like Viper's auto-loading for .json/.yml files.
+
+```go
+rootCmd := &cobra.Command{
+    Use:   "myapp",
+    Short: "My application",
+}
+
+// One-liner: adds --config flag + automatic .lua discovery
+culebra.EnableLuaConfig(rootCmd)
+```
+
+### Type Conversion Functions
+
+#### `LuaToGo(lv lua.LValue) any`
+Converts Lua value to Go without array conversion.
+
+```go
+L := lua.NewState()
+defer L.Close()
+L.DoString(`return {name = "test", value = 42}`)
+lv := L.Get(-1)
+goValue := culebra.LuaToGo(lv)
+// goValue is map[string]any{"name": "test", "value": 42.0}
+```
+
+#### `LuaToGoWithArrays(lv lua.LValue) any`
+Converts Lua value to Go with array conversion.
+
+```go
+L.DoString(`return {1, 2, 3, 4}`)
+lv := L.Get(-1)
+goValue := culebra.LuaToGoWithArrays(lv)
+// goValue is []any{1.0, 2.0, 3.0, 4.0}
+```
+
+#### `LuaToGoSafe(lv lua.LValue, convertArrays bool, maxDepth, maxTableSize int) (any, error)`
+Converts with configurable safety limits (recommended for untrusted data).
+
+```go
+goValue, err := culebra.LuaToGoSafe(lv, true, 50, 1000)
+if err != nil {
+    // Handle depth/size limit errors
+}
+```
+
+#### `GoToLua(L *lua.LState, value any) lua.LValue`
+Converts Go value to Lua.
+
+```go
+goValue := map[string]any{"name": "test", "count": 42}
+lv := culebra.GoToLua(L, goValue)
+L.SetGlobal("config", lv)
+// Lua can now access config.name and config.count
+```
+
+### Config Struct
+
+```go
+type Config struct {
+    FilePath      string         // Required: path to .lua file
+    Globals       map[string]any // Optional: Go values accessible in Lua
+    ConvertArrays bool           // Convert Lua arrays to Go slices
+    MaxDepth      int            // Max nesting depth (0 = default 100)
+    MaxTableSize  int            // Max entries per table (0 = unlimited)
+}
+```
 
 ## 🧪 Usage Examples
 
 ### Basic Configuration Loading
 ```go
-// Simple Lua configuration loading
 cfg := culebra.Config{FilePath: "config.lua"}
 data, err := culebra.Load(cfg)
 if err != nil {
@@ -97,34 +221,44 @@ fmt.Printf("App name: %s\n", data["app"].(map[string]any)["name"])
 
 ### Array Support
 ```go
-// Load with automatic array conversion
-data, err := culebra.LoadWithArrays("config.lua")
+cfg := culebra.Config{
+    FilePath:      "config.lua",
+    ConvertArrays: true,
+}
+data, err := culebra.Load(cfg)
 // Lua arrays become Go slices: []any{"item1", "item2", "item3"}
 ```
 
 ### Global Variables
 ```go
-// Pass Go variables to Lua configuration
-globals := map[string]any{
-    "environment": "production",
-    "debug_enabled": false,
+cfg := culebra.Config{
+    FilePath: "config.lua",
+    Globals: map[string]any{
+        "environment":   "production",
+        "debug_enabled": false,
+    },
 }
-data, err := culebra.LoadWithGlobals("config.lua", globals)
+data, err := culebra.Load(cfg)
+// Lua code can access 'environment' and 'debug_enabled' variables
 ```
 
 ### Viper Integration
 ```go
 cfg := culebra.Config{
-    FilePath: "config.lua",
+    FilePath:      "config.lua",
     ConvertArrays: true,
 }
 err := culebra.BindToViper(cfg, viper.GetViper())
+
+// Access via Viper
+dbHost := viper.GetString("database.host")
+dbPort := viper.GetInt("database.port")
 ```
 
 ### Cobra CLI Integration
 ```go
 rootCmd := &cobra.Command{
-    Use: "myapp",
+    Use:   "myapp",
     Short: "My application with Lua configuration",
     Run: func(cmd *cobra.Command, args []string) {
         // Access configuration via Viper
@@ -133,65 +267,68 @@ rootCmd := &cobra.Command{
 }
 
 // Adds --config flag with automatic .lua file discovery
-culebra.UseWithCobra(rootCmd)
+culebra.EnableLuaConfig(rootCmd)
 ```
 
 ### Automatic Discovery
 ```go
-// Configure automatic .lua file discovery
-viper.SetConfigName("myapp")  // Searches for myapp.lua
+// Configure Viper search paths
+viper.SetConfigName("myapp")  // Will search for myapp.lua
 viper.AddConfigPath("/etc/myapp")
 viper.AddConfigPath("$HOME/.config/myapp")
 viper.AddConfigPath(".")
 
-culebra.UseWithCobra(rootCmd)  // Auto-loads first .lua file found
+// EnableLuaConfig auto-loads first .lua file found in search paths
+culebra.EnableLuaConfig(rootCmd)
 ```
 
-## 📂 Examples
-
-The repository includes comprehensive examples showcasing different use cases:
-
-- **[`examples/basic/`](examples/basic/)** - Basic Lua configuration with Cobra/Viper
-- **[`examples/autoload/`](examples/autoload/)** - Automatic configuration discovery  
-- **[`examples/arrays/`](examples/arrays/)** - Array conversion and Viper integration
-- **[`examples/advanced/`](examples/advanced/)** - Complex, environment-aware configuration
-- **[`examples/viper-showcase/`](examples/viper-showcase/)** - Comprehensive demo of ALL Viper Get functions
-
-Run all examples: `just example`
-
-## 🚀 Future Improvements
-
-### HTTP/Network Support
-Currently, Culebra supports local configuration logic but doesn't include HTTP capabilities. Future versions could add network support for advanced use cases:
-
-```lua
--- Future capability: Remote configuration fetching
-local feature_flags = http.get("https://api.company.com/feature-flags")
-local service_discovery = http.get("https://consul.company.com/v1/catalog/services")
-
-config.features = feature_flags.enabled
-config.services = service_discovery.endpoints
+### With Safety Limits
+```go
+cfg := culebra.Config{
+    FilePath:     "untrusted-config.lua",
+    MaxDepth:     50,      // Prevent deeply nested structures
+    MaxTableSize: 10000,   // Prevent huge tables
+}
+data, err := culebra.Load(cfg)
+if err != nil {
+    // Will return error if limits exceeded
+    log.Printf("Config rejected: %v", err)
+}
 ```
 
-This would enable:
-- **Remote Feature Flags**: Dynamic feature toggling from external services
-- **Service Discovery**: Automatic service endpoint configuration
-- **External Configuration**: Loading partial config from remote sources
-- **API Integration**: Direct integration with configuration management APIs
+## 📦 Dependencies
 
-**Implementation Options**:
-1. Custom HTTP module for gopher-lua
-2. Integration with existing `gluahttp` library  
-3. Go-side pre-fetching with Lua globals
-4. Async configuration updates
+- `github.com/yuin/gopher-lua` — **Required** for core functionality
+- `github.com/spf13/viper` — **Optional** (only if using Viper integration)
+- `github.com/spf13/cobra` — **Optional** (only if using Cobra integration)
 
-### Other Potential Enhancements
-- **Configuration Caching**: Cache remote configurations with TTL
-- **Hot Reloading**: Watch for configuration changes and reload automatically  
-- **Configuration Validation**: Schema validation for Lua configurations
-- **Encrypted Configurations**: Support for encrypted configuration files
-- **Configuration Templating**: Advanced templating beyond basic Lua logic
+**Total dependencies**: 1 required + ~148 transitive (if using Viper/Cobra)
 
-## 📝 License
+The core `Load()` function has **zero dependencies** beyond gopher-lua.
+
+## 🧭 Architecture Notes
+
+### Thread Safety
+- `Load()` creates a new Lua VM per call - safe for concurrent use
+- `BindToViper()` uses Viper which is **not thread-safe**
+- Don't call `BindToViper()` concurrently on the same Viper instance
+
+### Performance
+- Each `Load()` creates a new Lua VM (~1-2ms overhead)
+- Designed for one-time config loading, not high-frequency operations
+- No caching - configs are re-parsed on every `Load()` call
+
+### Reflection in Cobra Integration
+`EnableLuaConfig()` uses reflection to access Viper's private fields (`configName`, `configPaths`). This:
+- May break if Viper changes its internals
+- Is protected with panic recovery
+- Fails gracefully (falls back to current directory)
+- Is only needed for auto-discovery; explicit `--config` flag always works
+
+## 📄 License
 
 MIT
+
+## 🗺️ Roadmap
+
+See [ROADMAP.md](ROADMAP.md) for planned features and improvements.

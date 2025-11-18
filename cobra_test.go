@@ -9,8 +9,8 @@ import (
 	"github.com/spf13/viper"
 )
 
-// TestUseWithCobraBasic tests the basic UseWithCobra functionality with simpler assertions
-func TestUseWithCobraBasic(t *testing.T) {
+// TestEnableLuaConfigBasic tests the basic EnableLuaConfig functionality with simpler assertions
+func TestEnableLuaConfigBasic(t *testing.T) {
 	tmpDir := t.TempDir()
 	configFile := filepath.Join(tmpDir, "test.lua")
 	configContent := `test_value = "from_lua"`
@@ -29,7 +29,7 @@ func TestUseWithCobraBasic(t *testing.T) {
 			},
 		}
 
-		UseWithCobra(cmd)
+		EnableLuaConfig(cmd)
 		cmd.SetArgs([]string{"--config", configFile})
 
 		if err := cmd.Execute(); err != nil {
@@ -45,7 +45,7 @@ func TestUseWithCobraBasic(t *testing.T) {
 			Run: func(cmd *cobra.Command, args []string) {},
 		}
 
-		UseWithCobra(cmd)
+		EnableLuaConfig(cmd)
 
 		if err := cmd.Execute(); err != nil {
 			t.Fatal(err)

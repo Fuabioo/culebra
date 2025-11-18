@@ -9,8 +9,10 @@ import (
 	"github.com/spf13/viper"
 )
 
-// UseWithCobra adds Lua config support to a Cobra command with automatic detection
-func UseWithCobra(cmd *cobra.Command) {
+// EnableLuaConfig adds seamless Lua config support to a Cobra command.
+// It works like Viper's automatic config loading for .json/.yml files, but for .lua files.
+// Adds a --config flag and automatically searches for .lua configs in Viper's search paths.
+func EnableLuaConfig(cmd *cobra.Command) {
 	var configFile string
 
 	cmd.PersistentFlags().StringVar(&configFile, "config", "", "config file (supports .lua, .yml, .json)")
@@ -60,12 +62,19 @@ func tryAutoloadLua(cmd *cobra.Command) {
 	}
 }
 
-// getViperConfigName safely attempts to get the config name from viper
-// Returns empty string if unable to determine
+// getViperConfigName safely attempts to get the config name from viper using reflection.
+// Returns empty string if unable to determine.
+//
+// WARNING: This function uses reflection to access Viper's internal 'configName' field.
+// It may break if Viper changes its internal structure in future versions.
+// The reflection is protected with panic recovery to fail gracefully.
 func getViperConfigName() (result string) {
-	// Try to use reflection with proper error handling
+	// Panic protection - reflection into private fields can panic
 	defer func() {
-		_ = recover() // Ignore panics from reflection
+		if r := recover(); r != nil {
+			// Silent failure - autoload will fall back gracefully
+			result = ""
+		}
 	}()
 
 	v := viper.GetViper()
@@ -85,12 +94,19 @@ func getViperConfigName() (result string) {
 	return ""
 }
 
-// getViperConfigPaths safely attempts to get the config paths from viper
-// Returns empty slice if unable to determine
+// getViperConfigPaths safely attempts to get the config paths from viper using reflection.
+// Returns empty slice if unable to determine.
+//
+// WARNING: This function uses reflection to access Viper's internal 'configPaths' field.
+// It may break if Viper changes its internal structure in future versions.
+// The reflection is protected with panic recovery to fail gracefully.
 func getViperConfigPaths() (result []string) {
-	// Try to use reflection with proper error handling
+	// Panic protection - reflection into private fields can panic
 	defer func() {
-		_ = recover() // Ignore panics from reflection
+		if r := recover(); r != nil {
+			// Silent failure - autoload will fall back to current directory
+			result = []string{}
+		}
 	}()
 
 	result = []string{}
@@ -115,30 +131,6 @@ func getViperConfigPaths() (result []string) {
 		return paths
 	}
 	return result
-}
-
-// AutoLoadLua automatically detects and loads .lua config files from Viper's config settings
-func AutoLoadLua(cmd *cobra.Command) {
-	cobra.OnInitialize(func() {
-		// Check if Viper has a config file path configured
-		if viperConfigFile := viper.ConfigFileUsed(); viperConfigFile != "" {
-			tryLuaConfig(cmd, viperConfigFile)
-			return
-		}
-
-		// Check Viper's config name and paths for .lua files
-		configName := viper.GetString("config")
-		if configName == "" {
-			// Try common config names if none set
-			for _, name := range []string{"config", cmd.Name()} {
-				if tryLuaConfig(cmd, name) {
-					return
-				}
-			}
-		} else {
-			tryLuaConfig(cmd, configName)
-		}
-	})
 }
 
 func loadConfig(cmd *cobra.Command, configFile string) {

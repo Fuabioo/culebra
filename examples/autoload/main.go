@@ -32,7 +32,7 @@ func main() {
 	viper.AddConfigPath("$HOME/.config")
 
 	// Enable Cobra integration (this handles --config flag and autoloading)
-	culebra.UseWithCobra(rootCmd)
+	culebra.EnableLuaConfig(rootCmd)
 
 	if err := rootCmd.Execute(); err != nil {
 		log.Fatal(err)
